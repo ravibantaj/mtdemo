@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>News Headline Slideshow – OBS Transparent</title>
+  <style>
+    /* OBS TRANSPARENT BACKGROUND - CRITICAL */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      background: transparent !important;
+      background-color: transparent !important;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Arial, "Baloo 2", sans-serif;
+    }
+    
+    /* Main container - only preview visible in OBS */
+    .container {
+      display: flex;
+      width: 100%;
+      height: 100vh;
+      background: transparent !important;
+    }
+    
+    /* Input panel - always visible, left side */
+    .input-panel {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 400px;
+      height: 100vh;
+      background: #1a1a1a;
+      padding: 20px;
+      overflow-y: auto;
+      z-index: 1000;
+      border-right: 2px solid #333;
+      color: #fff;
+      transition: none;
+    }
+    
+    .input-panel h2 {
+      margin: 0 0 15px 0;
+      font-size: 22px;
+      color: #fff;
+    }
+    
+    .section {
+      margin-bottom: 15px;
+    }
+    
+    .section label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+      color: #ccc;
+      font-size: 14px;
+    }
+    
+    .source-row {
+      padding: 8px 0;
+      border-bottom: 1px solid #333;
+    }
+    
+    .source-row:last-of-type {
+      border-bottom: 0;
+    }
+    
+    .source-row strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 13px;
+      color: #ddd;
+    }
+    
+    .source-row button,
+    .source-actions button {
+      padding: 7px 12px;
+      border: 0;
+      border-radius: 4px;
+      background: #444;
+      color: #fff;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 13px;
+      margin: 3px;
+    }
+    
+    .source-row button:hover,
+    .source-actions button:hover {
+      opacity: 0.85;
+    }
+    
+    .source-actions {
+      margin-top: 10px;
+    }
+    
+    .file-name {
+      margin-top: 6px;
+      font-size: 12px;
+      color: #aaa;
+      word-break: break-word;
+    }
+    
+    .info {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #aaa;
+      line-height: 1.4;
+    }
+    
+    .control-box {
+      margin-top: 15px;
+      padding: 12px;
+      background: #252525;
+      border-radius: 6px;
+    }
+    
+    .control-box label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+      font-size: 14px;
+      color: #ccc;
+    }
+    
+    select,
+    .number-input {
+      width: 100%;
+      padding: 8px 10px;
+      background: #292929;
+      color: #fff;
+      border: 1px solid #555;
+      border-radius: 5px;
+      font-size: 14px;
+      outline: none;
+    }
+    
+    select:focus,
+    .number-input:focus {
+      border-color: #e21b23;
+    }
+    
+    /* Preview area - OBS sees this */
+    .preview-panel {
+      width: 100%;
+      height: 100vh;
+      background: transparent !important;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 400px;
+      width: calc(100% - 400px);
+    }
+    
+    .preview-wrapper {
+      width: 100%;
+      height: 100vh;
+      background: transparent !important;
+    }
+    
+    .preview {
+      width: 100%;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+      background: transparent !important;
+      border: none !important;
+    }
+    
+    .headline-area {
+      position: absolute;
+      left: 5%;
+      right: 5%;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: transparent !important;
+    }
+    
+    .headline {
+      width: 100%;
+      font-size: 90px;
+      line-height: 1.35;
+      font-weight: 900;
+      text-align: center;
+      color: #ffffff;
+      text-shadow: 
+        2px 2px 0 #000,
+        -2px -2px 0 #000,
+        2px -2px 0 #000,
+        -2px 2px 0 #000,
+        0 0 8px rgba(0,0,0,0.9),
+        0 0 8px rgba(0,0,0,0.8);
+      word-break: break-word;
+      background: transparent !important;
+      padding: 20px;
+    }
+    
+    /* Hide controls in OBS preview */
+    .preview-controls,
+    .preview-bottom-controls,
+    .status,
+    .timer,
+    .counter {
+      display: none !important;
+    }
+    
+    /* Manual headlines input */
+    .manual-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    
+    .manual-row textarea {
+      flex: 1;
+      min-height: 40px;
+      padding: 8px;
+      background: #1a1a1a;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 4px;
+      resize: vertical;
+      font-family: Arial, "Baloo 2", sans-serif;
+      font-size: 13px;
+    }
+    
+    .manual-row textarea:focus {
+      border-color: #e21b23;
+      outline: none;
+    }
+    
+    .manual-row .remove-btn {
+      background: #a00;
+      border: 0;
+      color: #fff;
+      border-radius: 4px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 16px;
+      margin-top: 4px;
+      flex-shrink: 0;
+    }
+    
+    .manual-row .remove-btn:hover {
+      background: #c00;
+    }
+    
+    .add-btn {
+      background: #2a7;
+      border: 0;
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 4px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 6px;
+      font-size: 14px;
+      width: 100%;
+    }
+    
+    .add-btn:hover {
+      background: #3a9;
+    }
+    
+    #manualContainer {
+      margin-top: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    
+    .manual-scroll {
+      max-height: 300px;
+      overflow-y: auto;
+      padding-right: 5px;
+    }
+    
+    .manual-scroll::-webkit-scrollbar {
+      width: 5px;
+    }
+    
+    .manual-scroll::-webkit-scrollbar-track {
+      background: #1a1a1a;
+      border-radius: 3px;
+    }
+    
+    .manual-scroll::-webkit-scrollbar-thumb {
+      background: #555;
+      border-radius: 3px;
+    }
+    
+    .manual-scroll::-webkit-scrollbar-thumb:hover {
+      background: #777;
+    }
+    
+    #manualCount {
+      color: #aaa;
+      font-size: 13px;
+    }
+    
+    /* Animation classes */
+    .headline.fade{animation:fadeIn var(--anim-duration, 0.8s) ease both}
+    .headline.zoom{animation:zoomIn var(--anim-duration, 0.8s) cubic-bezier(.2,.8,.2,1) both}
+    .headline.slide-left{animation:slideLeft var(--anim-duration, 0.8s) ease both}
+    .headline.slide-right{animation:slideRight var(--anim-duration, 0.8s) ease both}
+    .headline.slide-up{animation:slideUp var(--anim-duration, 0.8s) ease both}
+    .headline.slide-down{animation:slideDown var(--anim-duration, 0.8s) ease both}
+    .headline.blur{animation:blurIn var(--anim-duration, 0.9s) ease both}
+    .headline.flip{animation:flipIn var(--anim-duration, 0.9s) ease both}
+    .headline.rotate{animation:rotateIn var(--anim-duration, 0.8s) ease both}
+    .headline.bounce{animation:bounceIn var(--anim-duration, 1s) ease both}
+    .headline.pop{animation:popIn var(--anim-duration, 0.6s) ease both}
+    
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes zoomIn{from{opacity:0;transform:scale(.3)}to{opacity:1;transform:scale(1)}}
+    @keyframes slideLeft{from{opacity:0;transform:translateX(180px)}to{opacity:1;transform:translateX(0)}}
+    @keyframes slideRight{from{opacity:0;transform:translateX(-180px)}to{opacity:1;transform:translateX(0)}}
+    @keyframes slideUp{from{opacity:0;transform:translateY(120px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes slideDown{from{opacity:0;transform:translateY(-120px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes blurIn{from{opacity:0;filter:blur(20px);transform:scale(1.1)}to{opacity:1;filter:blur(0);transform:scale(1)}}
+    @keyframes flipIn{from{opacity:0;transform:perspective(700px) rotateX(90deg)}to{opacity:1;transform:perspective(700px) rotateX(0)}}
+    @keyframes rotateIn{from{opacity:0;transform:rotate(-15deg) scale(.7)}to{opacity:1;transform:rotate(0) scale(1)}}
+    @keyframes bounceIn{0%{opacity:0;transform:scale(.3)}50%{opacity:1;transform:scale(1.15)}70%{transform:scale(.9)}100%{opacity:1;transform:scale(1)}}
+    @keyframes popIn{0%{opacity:0;transform:scale(0)}80%{transform:scale(1.1)}100%{opacity:1;transform:scale(1)}}
+  </style>
+</head>
+<body>
+  <!-- LEFT PANEL - Input/Edit (always visible) -->
+  <div class="input-panel" id="inputPanel">
+    <h2>📰 Headline Editor</h2>
+
+    <div style="background:#252525;border-radius:6px;padding:12px;margin-bottom:15px">
+      <label style="font-weight:bold;display:block;margin-bottom:6px;color:#ccc;font-size:14px">✏️ Manual Headlines</label>
+      <div id="manualContainer" class="manual-scroll">
+        <div class="manual-row" id="row-0">
+          <textarea id="headline-0" placeholder="पहली हेडलाइन लिखें..." rows="1"></textarea>
+          <button class="remove-btn" data-idx="0" style="display:none;">✕</button>
+        </div>
+      </div>
+      <button class="add-btn" id="addHeadlineBtn">➕ Add Headline</button>
+      <div style="margin-top:6px;font-size:13px;color:#aaa">
+        <span id="manualCount">0</span> headlines in list
+      </div>
+    </div>
+
+    <!-- Text file import only (Excel/CSV removed) -->
+    <div style="background:#252525;border-radius:6px;padding:12px;margin-bottom:15px">
+      <label style="font-weight:bold;display:block;margin-bottom:6px;color:#ccc;font-size:14px">📥 Import Headlines</label>
+      <div class="source-row">
+        <strong>Text File (.txt)</strong>
+        <input type="file" id="textFile" accept=".txt,.text">
+      </div>
+      <div class="source-actions">
+        <button type="button" id="clearImported">Clear Imported</button>
+        <button type="button" id="clearAll" style="background:#a00">Clear All</button>
+      </div>
+      <div class="file-name" id="fileName">No source selected</div>
+      <div class="info">
+        Text file में हर line headline होगी।<br>
+        <b>Auto:</b> assets/headlines.txt से headlines भी लोड होंगी।
+      </div>
+    </div>
+
+    <!-- Background controls completely removed - fixed transparent -->
+
+    <div class="control-box">
+      <label style="font-size:13px;color:#ccc">Animation Settings</label>
+      <div style="margin-top:8px">
+        <label style="font-size:12px;color:#aaa">Animation Type</label>
+        <select id="animation" style="margin-bottom:8px">
+          <option value="fade">Fade In</option>
+          <option value="zoom">Zoom In</option>
+          <option value="slide-left">Slide Left</option>
+          <option value="slide-right">Slide Right</option>
+          <option value="slide-up">Slide Up</option>
+          <option value="slide-down">Slide Down</option>
+          <option value="blur">Blur In</option>
+          <option value="flip">3D Flip</option>
+          <option value="rotate">Rotate In</option>
+          <option value="bounce">Bounce</option>
+          <option value="pop">Pop In</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:8px">
+        <div style="flex:1">
+          <label style="font-size:12px;color:#aaa">Duration (sec)</label>
+          <input type="number" id="animationDuration" value="1" min="0.1" max="10" step="0.1" class="number-input">
+        </div>
+        <div style="flex:1">
+          <label style="font-size:12px;color:#aaa">Font Size (px)</label>
+          <input type="number" id="fontSize" value="90" min="20" max="200" step="1" class="number-input">
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        <label style="font-size:12px;color:#aaa">Display Time (sec)</label>
+        <input type="number" id="displayTime" value="5" min="1" max="60" step="1" class="number-input">
+      </div>
+    </div>
+
+    <div style="margin-top:15px;display:flex;gap:8px">
+      <button id="startBtn" style="flex:1;background:#e21b23;color:#fff;border:0;padding:10px;border-radius:5px;cursor:pointer;font-weight:bold;font-size:15px">▶ Start</button>
+      <button id="stopBtn" style="flex:1;background:#444;color:#fff;border:0;padding:10px;border-radius:5px;cursor:pointer;font-weight:bold;font-size:15px">■ Stop</button>
+    </div>
+    <div style="margin-top:8px;text-align:center;color:#aaa;font-size:13px" id="status">Ready</div>
+  </div>
+
+  <!-- RIGHT PANEL - Preview (OBS sees this) -->
+  <div class="preview-panel">
+    <div class="preview-wrapper">
+      <div class="preview" id="preview">
+        <div class="headline-area">
+          <div id="previewHeadline" class="headline fade">Manual headlines लिखें या import करें...</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      // ----- DOM refs -----
+      const preview = document.getElementById('preview');
+      const previewHeadline = document.getElementById('previewHeadline');
+      const animationSelect = document.getElementById('animation');
+      const animationDuration = document.getElementById('animationDuration');
+      const displayTime = document.getElementById('displayTime');
+      const fontSize = document.getElementById('fontSize');
+      const startBtn = document.getElementById('startBtn');
+      const stopBtn = document.getElementById('stopBtn');
+      const textFile = document.getElementById('textFile');
+      const clearImported = document.getElementById('clearImported');
+      const clearAll = document.getElementById('clearAll');
+      const fileName = document.getElementById('fileName');
+      const statusEl = document.getElementById('status');
+      const manualContainer = document.getElementById('manualContainer');
+      const addBtn = document.getElementById('addHeadlineBtn');
+      const manualCount = document.getElementById('manualCount');
+
+      // ----- state -----
+      let headlines = [];
+      let importedHeadlines = [];
+      let currentIndex = 0;
+      let interval = null;
+      let countdown = 5;
+      let rowCounter = 1;
+
+      // ----- helpers -----
+      function cleanHeadlines(list) {
+        return list.map(v => String(v ?? '').trim()).filter(v => v.length > 0);
+      }
+
+      function getManualHeadlines() {
+        const rows = manualContainer.querySelectorAll('.manual-row textarea');
+        const vals = [];
+        rows.forEach(ta => {
+          const v = ta.value.trim();
+          if (v) vals.push(v);
+        });
+        return vals;
+      }
+
+      function getDisplayTime() {
+        let v = parseInt(displayTime.value);
+        if (isNaN(v) || v < 1) { v = 5; displayTime.value = 5; }
+        return v;
+      }
+      function getAnimationDuration() {
+        let v = parseFloat(animationDuration.value);
+        if (isNaN(v) || v < 0.1) { v = 1; animationDuration.value = 1; }
+        return v;
+      }
+      function getFontSize() {
+        let v = parseInt(fontSize.value);
+        if (isNaN(v) || v < 20) { v = 90; fontSize.value = 90; }
+        return v;
+      }
+
+      // Save state to localStorage
+      function saveState() {
+        try {
+          const state = {
+            importedHeadlines: importedHeadlines,
+            manualHeadlines: getManualHeadlines(),
+            fontSize: getFontSize(),
+            animation: animationSelect.value,
+            animDuration: getAnimationDuration(),
+            displayTime: getDisplayTime()
+          };
+          localStorage.setItem('headlineSlideshowState', JSON.stringify(state));
+        } catch (e) { /* ignore */ }
+      }
+
+      // Load state from localStorage
+      function loadState() {
+        try {
+          const raw = localStorage.getItem('headlineSlideshowState');
+          if (!raw) return false;
+          const state = JSON.parse(raw);
+          if (state.importedHeadlines && Array.isArray(state.importedHeadlines)) {
+            importedHeadlines = state.importedHeadlines;
+          }
+          if (state.manualHeadlines && Array.isArray(state.manualHeadlines)) {
+            const rows = manualContainer.querySelectorAll('.manual-row');
+            rows.forEach((r, i) => {
+              if (i > 0) r.remove();
+            });
+            const firstTa = document.querySelector('#headline-0');
+            if (firstTa && state.manualHeadlines.length > 0) {
+              firstTa.value = state.manualHeadlines[0] || '';
+            }
+            for (let i = 1; i < state.manualHeadlines.length; i++) {
+              addManualRow(state.manualHeadlines[i]);
+            }
+          }
+          if (state.fontSize) { fontSize.value = state.fontSize; }
+          if (state.animation) { animationSelect.value = state.animation; }
+          if (state.animDuration) { animationDuration.value = state.animDuration; }
+          if (state.displayTime) { displayTime.value = state.displayTime; }
+          rebuildHeadlineList();
+          statusEl.textContent = `State restored. Total: ${headlines.length} headlines`;
+          return true;
+        } catch (e) { console.warn('Load state error', e); return false; }
+      }
+
+      function rebuildHeadlineList() {
+        const manual = getManualHeadlines();
+        const all = [...manual, ...importedHeadlines];
+        const unique = [];
+        const seen = new Set();
+        for (const h of all) {
+          if (!seen.has(h)) { seen.add(h); unique.push(h); }
+        }
+        headlines = unique;
+        if (currentIndex >= headlines.length) currentIndex = Math.max(0, headlines.length - 1);
+        manualCount.textContent = getManualHeadlines().length;
+        
+        if (headlines.length) {
+          showHeadline();
+          statusEl.textContent = `Total: ${headlines.length} headlines`;
+        } else {
+          previewHeadline.textContent = 'Manual headlines लिखें या import करें...';
+          statusEl.textContent = 'कोई headline नहीं। Manual लिखें या import करें।';
+        }
+        saveState();
+      }
+
+      function showHeadline() {
+        if (!headlines.length) {
+          previewHeadline.textContent = 'Manual headlines लिखें या import करें...';
+          return;
+        }
+        
+        previewHeadline.className = 'headline';
+        void previewHeadline.offsetWidth;
+        
+        previewHeadline.textContent = headlines[currentIndex];
+        previewHeadline.style.fontSize = getFontSize() + 'px';
+        
+        const duration = getAnimationDuration();
+        previewHeadline.style.setProperty('--anim-duration', duration + 's');
+        
+        const animClass = animationSelect.value;
+        previewHeadline.classList.add(animClass);
+      }
+
+      function nextHeadline() {
+        if (!headlines.length) return;
+        currentIndex = (currentIndex + 1) % headlines.length;
+        countdown = getDisplayTime();
+        showHeadline();
+        saveState();
+      }
+
+      function startSlideshow() {
+        if (interval !== null) return;
+        if (!headlines.length) {
+          rebuildHeadlineList();
+        }
+        if (!headlines.length) {
+          statusEl.textContent = 'पहले manual headlines लिखें या import करें।';
+          return;
+        }
+        countdown = getDisplayTime();
+        showHeadline();
+        interval = setInterval(() => {
+          countdown--;
+          if (countdown <= 0) nextHeadline();
+        }, 1000);
+        statusEl.textContent = '▶ Slideshow चल रहा है...';
+        startBtn.textContent = '▶ Running';
+      }
+
+      function stopSlideshow() {
+        clearInterval(interval);
+        interval = null;
+        countdown = getDisplayTime();
+        statusEl.textContent = '⏸ Stopped';
+        startBtn.textContent = '▶ Start';
+      }
+
+      // ----- add / remove manual rows -----
+      function addManualRow(text = '') {
+        const idx = rowCounter++;
+        const row = document.createElement('div');
+        row.className = 'manual-row';
+        row.id = 'row-' + idx;
+        const ta = document.createElement('textarea');
+        ta.id = 'headline-' + idx;
+        ta.placeholder = 'हेडलाइन लिखें...';
+        ta.rows = 1;
+        ta.value = text;
+        const btn = document.createElement('button');
+        btn.className = 'remove-btn';
+        btn.dataset.idx = idx;
+        btn.textContent = '✕';
+        btn.style.display = 'block';
+        row.appendChild(ta);
+        row.appendChild(btn);
+        manualContainer.appendChild(row);
+
+        btn.addEventListener('click', function(e) {
+          const rows = manualContainer.querySelectorAll('.manual-row');
+          if (rows.length <= 1) {
+            statusEl.textContent = 'कम से कम एक manual headline रखें।';
+            return;
+          }
+          row.remove();
+          updateRemoveButtons();
+          rebuildHeadlineList();
+          saveState();
+        });
+
+        ta.addEventListener('input', function() {
+          rebuildHeadlineList();
+          saveState();
+        });
+
+        if (text) {
+          const evt = new Event('input');
+          ta.dispatchEvent(evt);
+        }
+        updateRemoveButtons();
+        manualContainer.scrollTop = manualContainer.scrollHeight;
+        return row;
+      }
+
+      function updateRemoveButtons() {
+        const rows = manualContainer.querySelectorAll('.manual-row');
+        rows.forEach((r, i) => {
+          const btn = r.querySelector('.remove-btn');
+          if (btn) {
+            btn.style.display = (rows.length > 1) ? 'block' : 'none';
+          }
+        });
+      }
+
+      addManualRow('');
+      addBtn.addEventListener('click', function() {
+        addManualRow('');
+        rebuildHeadlineList();
+        saveState();
+      });
+
+      // ----- import: append to importedHeadlines -----
+      function appendImported(values, sourceName) {
+        const clean = cleanHeadlines(values);
+        if (!clean.length) {
+          statusEl.textContent = `${sourceName}: कोई headline नहीं मिली।`;
+          return;
+        }
+        let vals = clean;
+        if (vals.length) {
+          const first = vals[0].toLowerCase();
+          const headers = ['headline','headlines','headline 1','हेडलाइन','हेडलाइन 1','title','titles','news','text'];
+          if (headers.includes(first)) vals = vals.slice(1);
+        }
+        if (!vals.length) {
+          statusEl.textContent = `${sourceName}: कोई headline नहीं मिली।`;
+          return;
+        }
+        importedHeadlines = [...importedHeadlines, ...vals];
+        rebuildHeadlineList();
+        statusEl.textContent = `${vals.length} headlines imported from ${sourceName}. Total: ${headlines.length}`;
+        saveState();
+      }
+
+      // ----- import handlers -----
+      function updateFileName(name) {
+        fileName.textContent = name || 'No source selected';
+      }
+
+      textFile.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        updateFileName(file.name);
+        statusEl.textContent = 'Text file पढ़ी जा रही है...';
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          const text = String(ev.target.result || '');
+          const values = text.split(/\r?\n/).map(v => v.trim()).filter(Boolean);
+          appendImported(values, 'Text file');
+        };
+        reader.readAsText(file, 'UTF-8');
+      });
+
+      clearImported.addEventListener('click', function() {
+        stopSlideshow();
+        importedHeadlines = [];
+        rebuildHeadlineList();
+        updateFileName('');
+        statusEl.textContent = 'Imported headlines cleared. Only manual remain.';
+        saveState();
+      });
+
+      clearAll.addEventListener('click', function() {
+        stopSlideshow();
+        const rows = manualContainer.querySelectorAll('.manual-row');
+        rows.forEach((r, i) => {
+          if (i > 0) r.remove();
+          else {
+            const ta = r.querySelector('textarea');
+            if (ta) ta.value = '';
+          }
+        });
+        importedHeadlines = [];
+        headlines = [];
+        currentIndex = 0;
+        manualCount.textContent = '0';
+        previewHeadline.textContent = 'Manual headlines लिखें या import करें...';
+        updateFileName('');
+        statusEl.textContent = 'All headlines cleared.';
+        updateRemoveButtons();
+        saveState();
+      });
+
+      // ----- UI controls -----
+      animationSelect.addEventListener('change', function() { showHeadline(); saveState(); });
+      animationDuration.addEventListener('input', function() {
+        const duration = getAnimationDuration();
+        previewHeadline.style.setProperty('--anim-duration', duration + 's');
+        saveState();
+      });
+      displayTime.addEventListener('input', function() {
+        if (interval === null) { countdown = getDisplayTime(); }
+        saveState();
+      });
+      fontSize.addEventListener('input', function() {
+        previewHeadline.style.fontSize = getFontSize() + 'px';
+        saveState();
+      });
+
+      startBtn.addEventListener('click', startSlideshow);
+      stopBtn.addEventListener('click', stopSlideshow);
+
+      // ----- auto-load headlines from assets/headlines.txt -----
+      async function loadHeadlinesFromAssets() {
+        try {
+          const response = await fetch('assets/headlines.txt', { cache: 'no-store' });
+          if (!response.ok) return false;
+
+          const text = await response.text();
+          const values = text.split(/\r?\n/).map(v => v.trim()).filter(Boolean);
+
+          if (values.length) {
+            importedHeadlines = [];
+            appendImported(values, 'assets/headlines.txt');
+            updateFileName('assets/headlines.txt');
+            return true;
+          }
+        } catch (err) {
+          console.warn('Could not load assets/headlines.txt:', err);
+        }
+        return false;
+      }
+
+      const loaded = loadState();
+
+      if (!loaded || (headlines.length === 0 && importedHeadlines.length === 0)) {
+        loadHeadlinesFromAssets().then(() => {
+          if (headlines.length === 0) rebuildHeadlineList();
+        });
+      }
+
+      countdown = getDisplayTime();
+
+      document.addEventListener('click', function() { saveState(); });
+      document.addEventListener('input', function() { saveState(); });
+    })();
+  </script>
+</body>
+</html>
